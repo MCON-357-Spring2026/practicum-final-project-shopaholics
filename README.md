@@ -11,5 +11,5 @@ FitVision is a web application that allows users to virtually "try on" clothes. 
 - **AI Model:** Fashn.ai
 
 ## 🔗 Project Management
-- **Jira Epic:** [Link to M3S-17 here]
-- **Documentation:** [Link to your Confluence page here]
+- **Jira Epic:** https://mcon152.atlassian.net/browse/M3S-17
+- **Documentation:** https://mcon152.atlassian.net/wiki/spaces/team9d39f66a69dc4fdaa5b025a0c78b48b6/overview
