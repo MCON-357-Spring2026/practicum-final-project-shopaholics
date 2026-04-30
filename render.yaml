@@ -1,0 +1,79 @@
+services:
+
+  # ── Flask Backend ──────────────────────────────────────
+  - type: web
+    name: fitvision-backend
+    runtime: python
+    rootDir: backend
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app
+    preDeployCommand: flask db upgrade
+
+    envVars:
+      - key: FLASK_ENV
+        value: production
+      - key: FLASK_APP
+        value: wsgi.py
+
+      # Auto-generated secrets — Render stores these securely
+      - key: SECRET_KEY
+        generateValue: true
+      - key: JWT_SECRET_KEY
+        generateValue: true
+
+      # Render injects this automatically from the linked database
+      - key: DATABASE_URL
+        fromDatabase:
+          name: fitvision-db
+          property: connectionString
+
+      # Set manually in Render dashboard after first deploy
+      # (needs the frontend service URL, known after it deploys)
+      - key: FRONTEND_URL
+        sync: false
+
+      # AWS — set in Render dashboard
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_REGION
+        value: us-east-1
+      - key: S3_BUCKET
+        sync: false
+
+      # External APIs — set in Render dashboard
+      - key: RAPIDAPI_KEY
+        sync: false
+      - key: RAPIDAPI_HOST
+        value: apidojo-h-and-m-hm-v1.p.rapidapi.com
+      - key: FASHN_API_KEY
+        sync: false
+      - key: FASHN_API_BASE_URL
+        value: https://api.fashn.ai/v1
+
+  # ── React Frontend ─────────────────────────────────────
+  - type: web
+    name: fitvision-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+
+    envVars:
+      # Set in Render dashboard: https://fitvision-backend.onrender.com/api
+      - key: VITE_API_URL
+        sync: false
+
+    routes:
+      # Send all routes to index.html for React Router to handle
+      - type: rewrite
+        source: /*
+        destination: /index.html
+
+# ── PostgreSQL Database ────────────────────────────────
+databases:
+  - name: fitvision-db
+    databaseName: fitvision
+    user: fitvision
+    plan: free
