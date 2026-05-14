@@ -15,7 +15,7 @@ tryon_bp = Blueprint("tryon", __name__)
 @jwt_required()
 def generate():
     user_id = get_jwt_identity()
-    data = request.get_json()
+    data = request.get_json() or {}
 
     person_image_url = data.get("person_image_url")
     garment_image_url = data.get("garment_image_url")

@@ -14,7 +14,7 @@ auth_bp = Blueprint("auth", __name__)
 # ── Register ────────────────────────────────────────────
 @auth_bp.post("/register")
 def register():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     email = data.get("email")
     password = data.get("password")
@@ -37,7 +37,7 @@ def register():
 # ── Login ───────────────────────────────────────────────
 @auth_bp.post("/login")
 def login():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     email = data.get("email")
     password = data.get("password")

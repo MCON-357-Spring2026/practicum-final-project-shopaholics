@@ -25,7 +25,7 @@ def create_app(config_override=None) -> Flask:
     limiter.init_app(app)
 
     # ── Models (must be imported for Alembic autogenerate) ─
-    import app.models  # noqa: F401
+    from app import models  # noqa: F401
 
     # ── JWT error handlers ────────────────────────────────
     _register_jwt_callbacks(jwt)
