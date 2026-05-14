@@ -46,16 +46,16 @@ def create_app(config_override=None) -> Flask:
     return app
 
 
-def _register_blueprints(app: Flask) -> None:
+def _register_blueprints(flask_app: Flask) -> None:
     from app.routes.auth import auth_bp
     from app.routes.products import products_bp
     from app.routes.uploads import uploads_bp
     from app.routes.tryon import tryon_bp
 
-    app.register_blueprint(auth_bp, url_prefix="/api/auth")
-    app.register_blueprint(products_bp, url_prefix="/api/products")
-    app.register_blueprint(uploads_bp, url_prefix="/api/uploads")
-    app.register_blueprint(tryon_bp, url_prefix="/api/tryon")
+    flask_app.register_blueprint(auth_bp, url_prefix="/api/auth")
+    flask_app.register_blueprint(products_bp, url_prefix="/api/products")
+    flask_app.register_blueprint(uploads_bp, url_prefix="/api/uploads")
+    flask_app.register_blueprint(tryon_bp, url_prefix="/api/tryon")
 
 
 def _register_jwt_callbacks(jwt_manager) -> None:
