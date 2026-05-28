@@ -40,6 +40,21 @@ def _upsert_product(raw: dict) -> Product:
     return product
 
 
+# ── Featured / browse ────────────────────────────────────
+@products_bp.get("/featured")
+@jwt_required()
+def featured():
+    """Return all wearable garments so the catalog has items without searching."""
+    try:
+        raw_results = catalog.list_wearables()
+    except Exception as e:
+        current_app.logger.error(f"Catalog API error: {e}")
+        return jsonify({"error": "Failed to fetch products"}), 502
+
+    products = [_upsert_product(r) for r in raw_results]
+    return jsonify([p.to_dict() for p in products]), 200
+
+
 # ── Search ───────────────────────────────────────────────
 @products_bp.get("/search")
 @jwt_required()

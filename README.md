@@ -16,7 +16,7 @@ A full-stack web app where users upload a photo of themselves, pick a clothing i
 | Database | PostgreSQL (local in dev, Render managed in prod) |
 | File Storage | Cloudinary (user photos + AI results) |
 | Product Catalog | DummyJSON (free, no-signup fake-store API) |
-| AI Try-On Engine | Hugging Face Space — CatVTON (`gradio_client`) |
+| AI Try-On Engine | Hugging Face Space — IDM-VTON (`gradio_client`) |
 | Deployment | Render (backend + frontend + DB via render.yaml) |
 
 ---
@@ -49,7 +49,7 @@ practicum-final-project-shopaholics/
 │       ├── services/
 │       │   ├── storage.py             ← Cloudinary: upload_image, get_url, delete_file
 │       │   ├── catalog.py             ← DummyJSON: search_products, get_product
-│       │   └── huggingface.py         ← CatVTON Space via gradio_client: run_tryon
+│       │   └── huggingface.py         ← IDM-VTON Space via gradio_client: run_tryon
 │       └── tasks/
 │           └── tryon_worker.py        ← background thread: Hugging Face → Cloudinary → DB update
 │
@@ -173,8 +173,8 @@ CLOUDINARY_API_SECRET=
 
 # Hugging Face (AI try-on)
 HUGGINGFACE_API_TOKEN=         # starts with hf_
-# HF_TRYON_SPACE=zhengchong/CatVTON      # optional override
-# HF_TRYON_API_NAME=/submit_function     # optional override
+# HF_TRYON_SPACE=yisol/IDM-VTON          # optional override
+# HF_TRYON_API_NAME=/tryon               # optional override
 
 # Product catalog API (no key needed)
 PRODUCT_API_BASE_URL=https://dummyjson.com
@@ -247,7 +247,7 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 - [x] Cloudinary storage service: upload, delete, URL build
 - [x] Upload route with file validation (type + 10MB limit)
 - [x] DummyJSON product service with DB caching + TTL
-- [x] Hugging Face / CatVTON try-on service (`gradio_client`)
+- [x] Hugging Face / IDM-VTON try-on service (`gradio_client`)
 - [x] Async try-on worker (background thread)
 - [x] Try-on routes: generate, poll, history, delete
 - [x] React app: Vite + React Router + AuthContext
@@ -266,7 +266,7 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 - [ ] **Get free API keys** — Hugging Face token (`hf_...`) + Cloudinary (cloud name, key, secret). DummyJSON needs nothing.
 - [ ] **Fill in `backend/.env`** — copy `.env.example`, paste the keys above
 - [ ] **Run migrations locally** — `flask db init && flask db migrate -m "initial" && flask db upgrade` (needs Postgres running)
-- [ ] **Confirm the HF Space API** — open the CatVTON Space → "Use via API"; if the signature differs, set `HF_TRYON_SPACE` / `HF_TRYON_API_NAME` (and tweak the predict args in `services/huggingface.py`)
+- [ ] **HF Space reliability** — try-on uses the public IDM-VTON Space (CatVTON was broken). Public Spaces can go down or hit ZeroGPU quota; if it fails, check the Space is up, or switch via `HF_TRYON_SPACE` / `HF_TRYON_API_NAME` (+ predict args in `services/huggingface.py`)
 - [ ] **End-to-end test** — register → search → upload photo → try on → view result
 - [ ] **Friendly error for model rejection** — when the model can't detect a human, show a clear message instead of generic "FAILED"
 - [ ] **Saved outfits / favorites** (check rubric) — history page is live (`/history`); add an explicit "save/favorite" toggle only if the rubric demands more than viewing past try-ons
@@ -282,7 +282,7 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 1. User uploads photo       POST /api/uploads/person → stored in Cloudinary
 2. User selects product     navigates to /fitting-room with product data
 3. User clicks "Try It On"  POST /api/tryon/generate → returns job_id immediately
-4. Background thread fires  calls the HF CatVTON Space with both image URLs
+4. Background thread fires  calls the HF IDM-VTON Space with both image URLs
 5. Worker waits on model    gradio_client blocks until the result is ready
 6. Result stored            uploaded to Cloudinary as results/{user_id}/{uuid}
 7. Job updated in DB        status=DONE, result_url=Cloudinary public_id

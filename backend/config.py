@@ -47,14 +47,15 @@ class Config:
     PRODUCT_API_BASE_URL = os.environ.get("PRODUCT_API_BASE_URL", "https://dummyjson.com")
 
     # ── Hugging Face try-on (replaces Fashn.ai) ───────────────────────────
-    # Default model is the CatVTON Space. The Space's exact API can be found
-    # on its page under "Use via API"; override these if it changes.
+    # Default model is the IDM-VTON Space. The Space's exact API can be found
+    # on its page under "Use via API"; override these if it changes or if you
+    # switch to a different try-on Space.
     HUGGINGFACE_API_TOKEN = os.environ.get("HUGGINGFACE_API_TOKEN")
-    HF_TRYON_SPACE = os.environ.get("HF_TRYON_SPACE", "zhengchong/CatVTON")
-    HF_TRYON_API_NAME = os.environ.get("HF_TRYON_API_NAME", "/submit_function")
-    HF_TRYON_STEPS = int(os.environ.get("HF_TRYON_STEPS", 50))
-    HF_TRYON_GUIDANCE = float(os.environ.get("HF_TRYON_GUIDANCE", 2.5))
-    HF_TRYON_CLOTH_TYPE = os.environ.get("HF_TRYON_CLOTH_TYPE", "upper")
+    HF_TRYON_SPACE = os.environ.get("HF_TRYON_SPACE", "yisol/IDM-VTON")
+    HF_TRYON_API_NAME = os.environ.get("HF_TRYON_API_NAME", "/tryon")
+    # More denoise steps → better garment fidelity (slower). 40 is a good balance.
+    HF_TRYON_STEPS = int(os.environ.get("HF_TRYON_STEPS", 40))
+    HF_TRYON_SEED = int(os.environ.get("HF_TRYON_SEED", 42))
 
     # ── Product cache ─────────────────────────────────────────────────────
     PRODUCT_CACHE_TTL_SECONDS = int(os.environ.get("PRODUCT_CACHE_TTL_SECONDS", 3600))

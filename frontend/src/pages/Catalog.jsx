@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { searchProducts } from "../api/products";
+import { searchProducts, getFeaturedProducts } from "../api/products";
 import ProductCard from "../components/ProductCard";
 
 export default function Catalog() {
@@ -13,9 +13,31 @@ export default function Catalog() {
   const [error, setError] = useState(null);
   const [searched, setSearched] = useState(false);
 
+  // Show clothing by default so the catalog isn't empty until you search.
+  const loadFeatured = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await getFeaturedProducts();
+      setProducts(res.data);
+      setSearched(false);
+    } catch {
+      setError("Failed to load the catalog. Try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadFeatured();
+  }, []);
+
   const handleSearch = async (e) => {
     e.preventDefault();
-    if (!query.trim()) return;
+    if (!query.trim()) {
+      loadFeatured();
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -64,7 +86,15 @@ export default function Catalog() {
       {error && <p style={{ color: "red" }}>{error}</p>}
 
       {searched && products.length === 0 && !loading && (
-        <p style={{ color: "#666" }}>No products found for "{query}".</p>
+        <p style={{ color: "#666" }}>
+          No products found for "{query}".{" "}
+          <button
+            onClick={() => { setQuery(""); loadFeatured(); }}
+            style={{ background: "none", border: "none", color: "#06c", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+          >
+            Show all items
+          </button>
+        </p>
       )}
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(220px, 1fr))", gap: 20 }}>

@@ -1,0 +1,18 @@
+[
+  {"id": "seed-04469", "title": "Cotton Crew Tee", "brand": "FitVision Studio", "category": "tops", "price": 24.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/04469_00.jpg"},
+  {"id": "seed-04743", "title": "Graphic Print Tee", "brand": "Urban Thread", "category": "tops", "price": 29.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/04743_00.jpg"},
+  {"id": "seed-09133", "title": "Striped Long Sleeve", "brand": "North & Co", "category": "tops", "price": 34.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09133_00.jpg"},
+  {"id": "seed-09163", "title": "Relaxed Knit Top", "brand": "FitVision Studio", "category": "tops", "price": 39.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09163_00.jpg"},
+  {"id": "seed-09164", "title": "Everyday V-Neck", "brand": "Urban Thread", "category": "tops", "price": 22.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09164_00.jpg"},
+  {"id": "seed-09166", "title": "Soft Henley", "brand": "North & Co", "category": "tops", "price": 32.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09166_00.jpg"},
+  {"id": "seed-09176", "title": "Classic Polo", "brand": "FitVision Studio", "category": "tops", "price": 36.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09176_00.jpg"},
+  {"id": "seed-09236", "title": "Boxy Crop Top", "brand": "Urban Thread", "category": "tops", "price": 27.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09236_00.jpg"},
+  {"id": "seed-09256", "title": "Ribbed Tank", "brand": "North & Co", "category": "tops", "price": 18.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09256_00.jpg"},
+  {"id": "seed-09263", "title": "Linen Blend Shirt", "brand": "FitVision Studio", "category": "tops", "price": 44.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09263_00.jpg"},
+  {"id": "seed-09266", "title": "Pullover Sweater", "brand": "Urban Thread", "category": "tops", "price": 49.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09266_00.jpg"},
+  {"id": "seed-09290", "title": "Casual Button-Up", "brand": "North & Co", "category": "tops", "price": 42.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09290_00.jpg"},
+  {"id": "seed-09305", "title": "Oversized Tee", "brand": "FitVision Studio", "category": "tops", "price": 26.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/09305_00.jpg"},
+  {"id": "seed-10165", "title": "Slim Fit Top", "brand": "Urban Thread", "category": "tops", "price": 31.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/10165_00.jpg"},
+  {"id": "seed-14627", "title": "Printed Blouse", "brand": "North & Co", "category": "tops", "price": 38.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/14627_00.jpg"},
+  {"id": "seed-14673", "title": "Weekend Tee", "brand": "FitVision Studio", "category": "tops", "price": 23.99, "thumbnail": "https://huggingface.co/spaces/yisol/IDM-VTON/resolve/main/example/cloth/14673_00.jpg"}
+]

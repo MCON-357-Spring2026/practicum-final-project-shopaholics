@@ -11,6 +11,7 @@ def run_tryon_job(app, job_id: str) -> None:
     with app.app_context():
         from app.extensions import db
         from app.models.tryon_job import TryOnJob, JobStatus
+        from app.models.product import Product
         from app.services import huggingface, storage
 
         job = db.session.get(TryOnJob, job_id)
@@ -23,10 +24,18 @@ def run_tryon_job(app, job_id: str) -> None:
             job.status = JobStatus.PROCESSING
             db.session.commit()
 
+            # A short garment description helps IDM-VTON; use the product title.
+            description = "an item of clothing"
+            if job.product_id:
+                product = db.session.get(Product, job.product_id)
+                if product and product.title:
+                    description = product.title
+
             # ── Step 2: run the try-on model (blocking) ──
             result_path = huggingface.run_tryon(
                 job.person_image_url,
                 job.garment_image_url,
+                description,
             )
 
             # ── Step 3: store result in Cloudinary ───────

@@ -1,14 +1,14 @@
 """
 Virtual try-on via a Hugging Face Space (replaces the old Fashn.ai service).
 
-The default Space is CatVTON (``zhengchong/CatVTON``). Spaces are Gradio apps,
-so we call them with ``gradio_client`` rather than a raw REST endpoint. The
-call is synchronous — it blocks until the model finishes — which is fine
-because it runs inside the background try-on worker thread.
+The default Space is IDM-VTON (``yisol/IDM-VTON``). Spaces are Gradio apps, so
+we call them with ``gradio_client`` rather than a raw REST endpoint. The call
+is synchronous — it blocks until the model finishes — which is fine because it
+runs inside the background try-on worker thread.
 
-If the Space's API signature changes, open its page on huggingface.co, click
-"Use via API", and adjust HF_TRYON_SPACE / HF_TRYON_API_NAME (and the predict
-arguments below) to match.
+If the Space's API signature changes (or you switch Spaces), open its page on
+huggingface.co, click "Use via API", and adjust HF_TRYON_SPACE /
+HF_TRYON_API_NAME (and the predict arguments below) to match.
 """
 import logging
 
@@ -18,7 +18,11 @@ from gradio_client import Client, handle_file
 logger = logging.getLogger(__name__)
 
 
-def run_tryon(person_image_url: str, garment_image_url: str) -> str:
+def run_tryon(
+    person_image_url: str,
+    garment_image_url: str,
+    garment_description: str = "an item of clothing",
+) -> str:
     """
     Send the person photo + garment image to the try-on Space and return a
     local filepath to the generated result image (downloaded by gradio_client).
@@ -29,20 +33,29 @@ def run_tryon(person_image_url: str, garment_image_url: str) -> str:
     token = current_app.config.get("HUGGINGFACE_API_TOKEN") or None
 
     logger.info(f"Connecting to HF Space {space}")
-    client = Client(space, hf_token=token)
+    client = Client(space, token=token, verbose=False)
 
-    # CatVTON's person input is a Gradio ImageEditor → expects a dict.
+    # Signature of IDM-VTON's /tryon (from the Space's "view API"):
+    #   dict        [ImageEditor] dict(background, layers, composite)
+    #   garm_img    [Image]
+    #   garment_des [str]   — short text description of the garment
+    #   is_checked  [bool]  — auto-generate the clothing mask
+    #   is_checked_crop [bool]
+    #   denoise_steps [float], seed [float]
+    #   -> (output_image, masked_image)
+    person = handle_file(person_image_url)
     result = client.predict(
-        {"background": handle_file(person_image_url), "layers": [], "composite": None},
+        {"background": person, "layers": [], "composite": person},
         handle_file(garment_image_url),
-        current_app.config["HF_TRYON_CLOTH_TYPE"],
+        garment_description,
+        True,   # is_checked — auto-generate the mask
+        False,  # is_checked_crop
         current_app.config["HF_TRYON_STEPS"],
-        current_app.config["HF_TRYON_GUIDANCE"],
-        -1,             # seed (-1 = random)
-        "result only",  # show_type
+        current_app.config["HF_TRYON_SEED"],
         api_name=api_name,
     )
 
+    # /tryon returns (output_image, masked_image); we want the first.
     path = _first_image_path(result)
     if not path:
         raise RuntimeError("Try-on model returned no image")
@@ -58,5 +71,5 @@ def _first_image_path(result):
             return None
         item = item[0]
     if isinstance(item, dict):
-        return item.get("image") or item.get("path") or item.get("name")
+        return item.get("path") or item.get("url") or item.get("image") or item.get("name")
     return item
