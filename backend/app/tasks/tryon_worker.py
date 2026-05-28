@@ -26,17 +26,35 @@ def run_tryon_job(app, job_id: str) -> None:
 
             # A short garment description helps IDM-VTON; use the product title.
             description = "an item of clothing"
+            category = ""
             if job.product_id:
                 product = db.session.get(Product, job.product_id)
-                if product and product.title:
-                    description = product.title
+                if product:
+                    if product.title:
+                        description = product.title
+                    category = (product.category or "").lower()
 
             # ── Step 2: run the try-on model (blocking) ──
-            result_path = huggingface.run_tryon(
-                job.person_image_url,
-                job.garment_image_url,
-                description,
-            )
+            # Dresses look much better on a full-body model; everything else
+            # uses IDM-VTON (best for upper-body garments).
+            is_dress = "dress" in category or category == "overall"
+
+            if is_dress:
+                try:
+                    result_path = huggingface.run_tryon_fullbody(
+                        job.person_image_url, job.garment_image_url, category="Dress"
+                    )
+                except Exception as e:
+                    logger.warning(
+                        f"Full-body model failed ({e}); falling back to IDM-VTON"
+                    )
+                    result_path = huggingface.run_tryon(
+                        job.person_image_url, job.garment_image_url, description
+                    )
+            else:
+                result_path = huggingface.run_tryon(
+                    job.person_image_url, job.garment_image_url, description
+                )
 
             # ── Step 3: store result in Cloudinary ───────
             public_id = f"results/{job.user_id}/{uuid.uuid4()}"

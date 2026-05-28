@@ -57,6 +57,12 @@ class Config:
     HF_TRYON_STEPS = int(os.environ.get("HF_TRYON_STEPS", 40))
     HF_TRYON_SEED = int(os.environ.get("HF_TRYON_SEED", 42))
 
+    # Full-body / dress model (OOTDiffusion). Dresses route here; falls back to
+    # the upper-body model above if this Space is down.
+    HF_FULLBODY_SPACE = os.environ.get("HF_FULLBODY_SPACE", "levihsu/OOTDiffusion")
+    HF_FULLBODY_API_NAME = os.environ.get("HF_FULLBODY_API_NAME", "/process_dc")
+    HF_FULLBODY_STEPS = int(os.environ.get("HF_FULLBODY_STEPS", 20))
+
     # ── Product cache ─────────────────────────────────────────────────────
     PRODUCT_CACHE_TTL_SECONDS = int(os.environ.get("PRODUCT_CACHE_TTL_SECONDS", 3600))
 

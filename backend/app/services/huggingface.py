@@ -62,6 +62,48 @@ def run_tryon(
     return path
 
 
+def run_tryon_fullbody(
+    person_image_url: str,
+    garment_image_url: str,
+    category: str = "Dress",
+) -> str:
+    """
+    Full-body / dress try-on via the OOTDiffusion Space (Dress Code mode).
+    Better than IDM-VTON for dresses and lower-body garments.
+
+    Signature of OOTDiffusion's /process_dc (from the Space's "view API"):
+      vton_img [Image], garm_img [Image],
+      category ['Upper-body' | 'Lower-body' | 'Dress'],
+      n_samples [int], n_steps [int], image_scale [float], seed [int]
+      -> gallery (list of images)
+
+    Note: this Space is occasionally down; callers should fall back to
+    run_tryon() on failure.
+    """
+    space = current_app.config["HF_FULLBODY_SPACE"]
+    api_name = current_app.config["HF_FULLBODY_API_NAME"]
+    token = current_app.config.get("HUGGINGFACE_API_TOKEN") or None
+
+    logger.info(f"Connecting to full-body HF Space {space}")
+    client = Client(space, token=token, verbose=False)
+
+    result = client.predict(
+        handle_file(person_image_url),
+        handle_file(garment_image_url),
+        category,
+        1,                                       # n_samples
+        current_app.config["HF_FULLBODY_STEPS"],  # n_steps
+        2.0,                                     # image_scale
+        current_app.config["HF_TRYON_SEED"],     # seed
+        api_name=api_name,
+    )
+
+    path = _first_image_path(result)
+    if not path:
+        raise RuntimeError("Full-body try-on model returned no image")
+    return path
+
+
 def _first_image_path(result):
     """Normalize the various shapes a Gradio Space may return into a filepath."""
     item = result

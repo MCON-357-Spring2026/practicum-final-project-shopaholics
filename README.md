@@ -16,7 +16,7 @@ A full-stack web app where users upload a photo of themselves, pick a clothing i
 | Database | PostgreSQL (local in dev, Render managed in prod) |
 | File Storage | Cloudinary (user photos + AI results) |
 | Product Catalog | DummyJSON (free, no-signup fake-store API) |
-| AI Try-On Engine | Hugging Face Space — IDM-VTON (`gradio_client`) |
+| AI Try-On Engine | Hugging Face Spaces — IDM-VTON (tops) + OOTDiffusion (dresses), `gradio_client` |
 | Deployment | Render (backend + frontend + DB via render.yaml) |
 
 ---
@@ -282,7 +282,8 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 1. User uploads photo       POST /api/uploads/person → stored in Cloudinary
 2. User selects product     navigates to /fitting-room with product data
 3. User clicks "Try It On"  POST /api/tryon/generate → returns job_id immediately
-4. Background thread fires  calls the HF IDM-VTON Space with both image URLs
+4. Background thread fires  dresses → OOTDiffusion (full-body), else → IDM-VTON;
+                            dresses fall back to IDM-VTON if OOTDiffusion is down
 5. Worker waits on model    gradio_client blocks until the result is ready
 6. Result stored            uploaded to Cloudinary as results/{user_id}/{uuid}
 7. Job updated in DB        status=DONE, result_url=Cloudinary public_id
