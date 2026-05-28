@@ -1,10 +1,12 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { searchProducts } from "../api/products";
 import ProductCard from "../components/ProductCard";
 
 export default function Catalog() {
   const { logout } = useAuth();
+  const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -33,9 +35,14 @@ export default function Catalog() {
     <div style={{ maxWidth: 1100, margin: "0 auto", padding: "24px 16px" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 24 }}>
         <h1 style={{ margin: 0 }}>FitVision</h1>
-        <button onClick={logout} style={{ background: "none", border: "1px solid #ccc", padding: "6px 14px", borderRadius: 6, cursor: "pointer" }}>
-          Log out
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button onClick={() => navigate("/history")} style={{ background: "none", border: "1px solid #ccc", padding: "6px 14px", borderRadius: 6, cursor: "pointer" }}>
+            My Try-Ons
+          </button>
+          <button onClick={logout} style={{ background: "none", border: "1px solid #ccc", padding: "6px 14px", borderRadius: 6, cursor: "pointer" }}>
+            Log out
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSearch} style={{ display: "flex", gap: 8, marginBottom: 32 }}>

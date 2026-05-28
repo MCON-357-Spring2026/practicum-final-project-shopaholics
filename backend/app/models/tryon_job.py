@@ -37,7 +37,6 @@ class TryOnJob(db.Model):
 
     person_image_url = db.Column(db.Text, nullable=False)
     garment_image_url = db.Column(db.Text, nullable=False)
-    fashn_prediction_id = db.Column(db.String(255))
 
     status = db.Column(
         db.Enum(JobStatus),

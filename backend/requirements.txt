@@ -9,8 +9,8 @@ flask-limiter==3.8.0
 psycopg2-binary==2.9.9
 sqlalchemy==2.0.36
 
-boto3==1.35.36
-botocore==1.35.36
+cloudinary==1.41.0
+gradio-client==1.4.2
 
 requests==2.32.3
 

@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required
 
 from app.extensions import db
 from app.models.product import Product
-from app.services import rapidapi
+from app.services import catalog
 
 products_bp = Blueprint("products", __name__)
 
@@ -17,8 +17,8 @@ def _is_cache_fresh(product: Product) -> bool:
 
 
 def _upsert_product(raw: dict) -> Product:
-    """Persist or refresh a product from a raw RapidAPI dict."""
-    external_id = str(raw.get("id") or raw.get("articleCode") or raw.get("external_id"))
+    """Persist or refresh a product from a raw DummyJSON dict."""
+    external_id = str(raw.get("id"))
 
     product = Product.query.filter_by(external_id=external_id).first()
 
@@ -26,14 +26,13 @@ def _upsert_product(raw: dict) -> Product:
         product = Product(external_id=external_id)
         db.session.add(product)
 
-    product.title = raw.get("name") or raw.get("title")
-    product.brand = raw.get("brandName") or raw.get("brand")
-    product.image_url = (
-        (raw.get("images") or [{}])[0].get("url")
-        or raw.get("image_url")
-    )
-    product.category = raw.get("categoryName") or raw.get("category")
-    product.price = raw.get("price") or raw.get("salePrice")
+    images = raw.get("images") or []
+    product.title = raw.get("title")
+    # DummyJSON omits "brand" on some items — fall back to the category.
+    product.brand = raw.get("brand") or raw.get("category")
+    product.image_url = raw.get("thumbnail") or (images[0] if images else None)
+    product.category = raw.get("category")
+    product.price = raw.get("price")
     product.raw_data = raw
     product.cached_at = datetime.now(timezone.utc)
 
@@ -53,7 +52,7 @@ def search():
         return jsonify({"error": "Query parameter 'q' is required"}), 400
 
     try:
-        raw_results = rapidapi.search_products(query, category=category, limit=limit)
+        raw_results = catalog.search_products(query, category=category, limit=limit)
     except Exception as e:
         current_app.logger.error(f"RapidAPI error: {e}")
         return jsonify({"error": "Failed to fetch products"}), 502
@@ -73,7 +72,7 @@ def get_product(product_id: str):
 
     if not _is_cache_fresh(product):
         try:
-            raw = rapidapi.get_product(product.external_id)
+            raw = catalog.get_product(product.external_id)
             product = _upsert_product(raw)
         except Exception as e:
             current_app.logger.warning(f"Cache refresh failed: {e}")

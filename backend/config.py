@@ -38,18 +38,23 @@ class Config:
         for o in os.environ.get("FRONTEND_URL", "http://localhost:5173").split(",")
     ]
 
-    # ── AWS S3 ────────────────────────────────────────────────────────────
-    AWS_ACCESS_KEY_ID = os.environ.get("AWS_ACCESS_KEY_ID")
-    AWS_SECRET_ACCESS_KEY = os.environ.get("AWS_SECRET_ACCESS_KEY")
-    AWS_REGION = os.environ.get("AWS_REGION", "us-east-1")
-    S3_BUCKET = os.environ.get("S3_BUCKET")
-    S3_PRESIGNED_URL_EXPIRY = int(os.environ.get("S3_PRESIGNED_URL_EXPIRY", 900))  # 15 min
+    # ── Cloudinary (image storage — replaces AWS S3) ──────────────────────
+    CLOUDINARY_CLOUD_NAME = os.environ.get("CLOUDINARY_CLOUD_NAME")
+    CLOUDINARY_API_KEY = os.environ.get("CLOUDINARY_API_KEY")
+    CLOUDINARY_API_SECRET = os.environ.get("CLOUDINARY_API_SECRET")
 
-    # ── External APIs ─────────────────────────────────────────────────────
-    RAPIDAPI_KEY = os.environ.get("RAPIDAPI_KEY")
-    RAPIDAPI_HOST = os.environ.get("RAPIDAPI_HOST", "apidojo-h-and-m-hm-v1.p.rapidapi.com")
-    FASHN_API_KEY = os.environ.get("FASHN_API_KEY")
-    FASHN_API_BASE_URL = os.environ.get("FASHN_API_BASE_URL", "https://api.fashn.ai/v1")
+    # ── Product catalog API (DummyJSON — no key needed) ───────────────────
+    PRODUCT_API_BASE_URL = os.environ.get("PRODUCT_API_BASE_URL", "https://dummyjson.com")
+
+    # ── Hugging Face try-on (replaces Fashn.ai) ───────────────────────────
+    # Default model is the CatVTON Space. The Space's exact API can be found
+    # on its page under "Use via API"; override these if it changes.
+    HUGGINGFACE_API_TOKEN = os.environ.get("HUGGINGFACE_API_TOKEN")
+    HF_TRYON_SPACE = os.environ.get("HF_TRYON_SPACE", "zhengchong/CatVTON")
+    HF_TRYON_API_NAME = os.environ.get("HF_TRYON_API_NAME", "/submit_function")
+    HF_TRYON_STEPS = int(os.environ.get("HF_TRYON_STEPS", 50))
+    HF_TRYON_GUIDANCE = float(os.environ.get("HF_TRYON_GUIDANCE", 2.5))
+    HF_TRYON_CLOTH_TYPE = os.environ.get("HF_TRYON_CLOTH_TYPE", "upper")
 
     # ── Product cache ─────────────────────────────────────────────────────
     PRODUCT_CACHE_TTL_SECONDS = int(os.environ.get("PRODUCT_CACHE_TTL_SECONDS", 3600))

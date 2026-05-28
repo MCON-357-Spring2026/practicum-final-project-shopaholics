@@ -32,25 +32,21 @@ services:
       - key: FRONTEND_URL
         sync: false
 
-      # AWS — set in Render dashboard
-      - key: AWS_ACCESS_KEY_ID
+      # Cloudinary (image storage) — set in Render dashboard
+      - key: CLOUDINARY_CLOUD_NAME
         sync: false
-      - key: AWS_SECRET_ACCESS_KEY
+      - key: CLOUDINARY_API_KEY
         sync: false
-      - key: AWS_REGION
-        value: us-east-1
-      - key: S3_BUCKET
+      - key: CLOUDINARY_API_SECRET
         sync: false
 
-      # External APIs — set in Render dashboard
-      - key: RAPIDAPI_KEY
+      # Hugging Face (AI try-on) — set in Render dashboard
+      - key: HUGGINGFACE_API_TOKEN
         sync: false
-      - key: RAPIDAPI_HOST
-        value: apidojo-h-and-m-hm-v1.p.rapidapi.com
-      - key: FASHN_API_KEY
-        sync: false
-      - key: FASHN_API_BASE_URL
-        value: https://api.fashn.ai/v1
+
+      # Product catalog API (DummyJSON — no key needed)
+      - key: PRODUCT_API_BASE_URL
+        value: https://dummyjson.com
 
   # ── React Frontend ─────────────────────────────────────
   - type: web
