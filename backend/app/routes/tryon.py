@@ -4,7 +4,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from app.extensions import db
 from app.models.tryon_job import TryOnJob, JobStatus
 from app.models.product import Product
-from app.services import s3
+from app.services import storage
 from app.tasks import tryon_worker
 
 tryon_bp = Blueprint("tryon", __name__)
@@ -53,7 +53,7 @@ def get_job(job_id: str):
     payload = job.to_dict()
 
     if job.status == JobStatus.DONE and job.result_url:
-        payload["result_url"] = s3.get_presigned_url(job.result_url)
+        payload["result_url"] = storage.get_url(job.result_url)
 
     return jsonify(payload), 200
 
@@ -77,7 +77,7 @@ def history():
     for job in pagination.items:
         payload = job.to_dict()
         if job.status == JobStatus.DONE and job.result_url:
-            payload["result_url"] = s3.get_presigned_url(job.result_url)
+            payload["result_url"] = storage.get_url(job.result_url)
         jobs.append(payload)
 
     return jsonify({
@@ -100,7 +100,7 @@ def delete_job(job_id: str):
         return jsonify({"error": "Job not found"}), 404
 
     if job.result_url:
-        s3.delete_file(job.result_url)
+        storage.delete_file(job.result_url)
 
     db.session.delete(job)
     db.session.commit()

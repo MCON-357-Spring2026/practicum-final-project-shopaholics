@@ -2,7 +2,7 @@ import uuid
 from flask import Blueprint, request, jsonify, current_app
 from flask_jwt_extended import jwt_required, get_jwt_identity
 
-from app.services import s3
+from app.services import storage
 
 uploads_bp = Blueprint("uploads", __name__)
 
@@ -35,16 +35,15 @@ def upload_person():
     if size > MAX_BYTES:
         return jsonify({"error": "File too large. Max 10 MB"}), 413
 
-    ext = file.filename.rsplit(".", 1)[1].lower()
-    key = f"persons/{user_id}/{uuid.uuid4()}.{ext}"
-    content_type = file.content_type or f"image/{ext}"
+    # Cloudinary public_ids don't include a file extension; it stores the
+    # original format and serves it from a CDN URL.
+    public_id = f"persons/{user_id}/{uuid.uuid4()}"
 
-    s3.upload_file(file.stream, key, content_type)
-    url = s3.get_presigned_url(key)
+    result = storage.upload_image(file.stream, public_id)
 
     return jsonify({
-        "key": key,
-        "url": url,
+        "key": result["public_id"],
+        "url": result["url"],
     }), 201
 
 
@@ -58,5 +57,5 @@ def delete_upload(key: str):
     if not key.startswith(f"persons/{user_id}/"):
         return jsonify({"error": "Forbidden"}), 403
 
-    s3.delete_file(key)
+    storage.delete_file(key)
     return jsonify({"message": "Deleted"}), 200

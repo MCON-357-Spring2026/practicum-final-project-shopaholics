@@ -13,10 +13,10 @@ A full-stack web app where users upload a photo of themselves, pick a clothing i
 |---|---|
 | Frontend | React 18, Vite, React Router, Axios |
 | Backend | Flask, SQLAlchemy, Flask-JWT-Extended, Flask-Bcrypt, Flask-Migrate |
-| Database | PostgreSQL (Render managed or AWS RDS) |
-| File Storage | AWS S3 (user photos + AI results) |
-| Product Catalog | RapidAPI (ASOS or Kohl's) |
-| AI Try-On Engine | Fashn.ai API |
+| Database | PostgreSQL (local in dev, Render managed in prod) |
+| File Storage | Cloudinary (user photos + AI results) |
+| Product Catalog | DummyJSON (free, no-signup fake-store API) |
+| AI Try-On Engine | Hugging Face Spaces — IDM-VTON (tops) + OOTDiffusion (dresses), `gradio_client` |
 | Deployment | Render (backend + frontend + DB via render.yaml) |
 
 ---
@@ -39,19 +39,19 @@ practicum-final-project-shopaholics/
 │       ├── models/
 │       │   ├── __init__.py            ← imports all models (required for Alembic)
 │       │   ├── user.py                ← User (id, email, password_hash, created_at)
-│       │   ├── product.py             ← Product (cached from RapidAPI)
+│       │   ├── product.py             ← Product (cached from DummyJSON)
 │       │   └── tryon_job.py           ← TryOnJob (PENDING→PROCESSING→DONE|FAILED)
 │       ├── routes/
 │       │   ├── auth.py                ← POST /register, POST /login, GET /me, POST /logout
-│       │   ├── products.py            ← GET /search, GET /<id> (DB cache + RapidAPI)
+│       │   ├── products.py            ← GET /search, GET /<id> (DB cache + DummyJSON)
 │       │   ├── uploads.py             ← POST /person, DELETE /<key>
 │       │   └── tryon.py               ← POST /generate, GET /jobs/<id>, GET /history
 │       ├── services/
-│       │   ├── s3.py                  ← upload_file, delete_file, get_presigned_url
-│       │   ├── rapidapi.py            ← search_products, get_product
-│       │   └── fashn.py               ← submit_tryon, poll_result
+│       │   ├── storage.py             ← Cloudinary: upload_image, get_url, delete_file
+│       │   ├── catalog.py             ← DummyJSON: search_products, get_product
+│       │   └── huggingface.py         ← IDM-VTON Space via gradio_client: run_tryon
 │       └── tasks/
-│           └── tryon_worker.py        ← background thread: Fashn.ai → S3 → DB update
+│           └── tryon_worker.py        ← background thread: Hugging Face → Cloudinary → DB update
 │
 └── frontend/
     ├── index.html
@@ -70,13 +70,14 @@ practicum-final-project-shopaholics/
         │   └── AuthContext.jsx        ← user state, login/logout, token restore
         ├── components/
         │   ├── ProtectedRoute.jsx
-        │   ├── ImageUpload.jsx        ← drag+drop, file validation, S3 upload
+        │   ├── ImageUpload.jsx        ← drag+drop, file validation, Cloudinary upload
         │   ├── ProductCard.jsx        ← product tile with "Try On" button
         │   └── TryOnStatus.jsx        ← polls every 3s, shows result image
         └── pages/
             ├── Login.jsx              ← login + register in one form
             ├── Catalog.jsx            ← search bar + product grid
-            └── FittingRoom.jsx        ← photo upload + garment + try-on trigger
+            ├── FittingRoom.jsx        ← photo upload + garment + try-on trigger
+            └── History.jsx            ← past try-ons grid (view + delete)
 ```
 
 ---
@@ -94,22 +95,22 @@ practicum-final-project-shopaholics/
 ### Products — `/api/products`
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| GET | `/search?q=&category=&limit=` | Yes | Search RapidAPI, cache in DB |
+| GET | `/search?q=&category=&limit=` | Yes | Search DummyJSON, cache in DB |
 | GET | `/<id>` | Yes | Single product (refreshes stale cache) |
 
 ### Uploads — `/api/uploads`
 | Method | Route | Auth | Description |
 |---|---|---|---|
-| POST | `/person` | Yes | Upload user photo → S3 |
+| POST | `/person` | Yes | Upload user photo → Cloudinary |
 | DELETE | `/<key>` | Yes | Delete own uploaded image |
 
 ### Try-On — `/api/tryon`
 | Method | Route | Auth | Description |
 |---|---|---|---|
 | POST | `/generate` | Yes | Create job, kick off async worker |
-| GET | `/jobs/<job_id>` | Yes | Poll status + presigned result URL |
+| GET | `/jobs/<job_id>` | Yes | Poll status + Cloudinary result URL |
 | GET | `/history` | Yes | Paginated past try-ons |
-| DELETE | `/jobs/<job_id>` | Yes | Delete job + S3 result |
+| DELETE | `/jobs/<job_id>` | Yes | Delete job + Cloudinary result |
 
 ### Health
 | Method | Route | Description |
@@ -129,7 +130,7 @@ users
 
 products
   id            VARCHAR(36) PRIMARY KEY
-  external_id   VARCHAR(255) UNIQUE NOT NULL   -- RapidAPI product ID
+  external_id   VARCHAR(255) UNIQUE NOT NULL   -- DummyJSON product ID
   title         VARCHAR(500)
   brand         VARCHAR(255)
   image_url     TEXT
@@ -144,7 +145,6 @@ tryon_jobs
   product_id          VARCHAR(36) FK → products.id (SET NULL)
   person_image_url    TEXT NOT NULL
   garment_image_url   TEXT NOT NULL
-  fashn_prediction_id VARCHAR(255)
   status              ENUM(PENDING, PROCESSING, DONE, FAILED)
   result_url          TEXT
   error_message       TEXT
@@ -166,19 +166,18 @@ DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fitvision_dev
 JWT_SECRET_KEY=                # any random string
 FRONTEND_URL=http://localhost:5173
 
-# AWS S3
-AWS_ACCESS_KEY_ID=
-AWS_SECRET_ACCESS_KEY=
-AWS_REGION=us-east-1
-S3_BUCKET=
+# Cloudinary (image storage)
+CLOUDINARY_CLOUD_NAME=
+CLOUDINARY_API_KEY=
+CLOUDINARY_API_SECRET=
 
-# RapidAPI
-RAPIDAPI_KEY=
-RAPIDAPI_HOST=                 # e.g. asos-api.p.rapidapi.com
+# Hugging Face (AI try-on)
+HUGGINGFACE_API_TOKEN=         # starts with hf_
+# HF_TRYON_SPACE=yisol/IDM-VTON          # optional override
+# HF_TRYON_API_NAME=/tryon               # optional override
 
-# Fashn.ai
-FASHN_API_KEY=
-FASHN_API_BASE_URL=https://api.fashn.ai/v1
+# Product catalog API (no key needed)
+PRODUCT_API_BASE_URL=https://dummyjson.com
 ```
 
 ---
@@ -217,8 +216,8 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 
 **On `fitvision-backend`:**
 - `FRONTEND_URL` → `https://fitvision-frontend.onrender.com`
-- `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`, `S3_BUCKET`
-- `RAPIDAPI_KEY`, `FASHN_API_KEY`
+- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
+- `HUGGINGFACE_API_TOKEN`
 
 **On `fitvision-frontend`:**
 - `VITE_API_URL` → `https://fitvision-backend.onrender.com/api`
@@ -231,9 +230,10 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 |---|---|
 | `KeyError: 'SECRET_KEY'` | Add env var in Render dashboard |
 | CORS blocked in browser | `FRONTEND_URL` must match frontend URL exactly, no trailing slash |
-| S3 upload `403` | Check IAM policy has `s3:PutObject` on your bucket |
+| Cloudinary upload fails | Check `CLOUDINARY_*` values match the dashboard (reveal the secret) |
 | Frontend API calls fail | `VITE_API_URL` not set or missing `/api` suffix |
-| Try-on stuck on PROCESSING | Dyno restarted mid-job — resubmit the job |
+| Try-on stuck on PROCESSING | Free dyno spun down mid-job, or HF Space cold-start (~20s) — resubmit |
+| Try-on always FAILS | HF Space API signature changed — check "Use via API" on the Space page and update `HF_TRYON_SPACE` / `HF_TRYON_API_NAME` |
 
 ---
 
@@ -244,16 +244,16 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 - [x] SQLAlchemy models: `User`, `Product`, `TryOnJob`
 - [x] Flask-Migrate setup
 - [x] Auth routes: register, login, JWT, protected `/me`
-- [x] S3 service: upload, delete, presigned URL, download
+- [x] Cloudinary storage service: upload, delete, URL build
 - [x] Upload route with file validation (type + 10MB limit)
-- [x] RapidAPI product service with DB caching + TTL
-- [x] Fashn.ai service: submit + polling with timeout
+- [x] DummyJSON product service with DB caching + TTL
+- [x] Hugging Face / IDM-VTON try-on service (`gradio_client`)
 - [x] Async try-on worker (background thread)
 - [x] Try-on routes: generate, poll, history, delete
 - [x] React app: Vite + React Router + AuthContext
 - [x] Axios client with JWT interceptor + 401 redirect
 - [x] All API wrappers: auth, products, uploads, tryon
-- [x] Pages: Login, Catalog, FittingRoom
+- [x] Pages: Login, Catalog, FittingRoom, History (view + delete past try-ons)
 - [x] Components: ImageUpload (drag+drop), ProductCard, TryOnStatus (polling)
 - [x] ProtectedRoute
 - [x] `render.yaml` for full Render deployment
@@ -263,12 +263,13 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 
 ## What's Left
 
-- [ ] **Pick catalog API** — ASOS or Kohl's, then update `_upsert_product()` in `backend/app/routes/products.py` to match that API's response field names
-- [ ] **Get API keys** — RapidAPI (ASOS/Kohl's), Fashn.ai, AWS IAM
-- [ ] **Run migrations locally** — `flask db init && flask db migrate && flask db upgrade`
+- [ ] **Get free API keys** — Hugging Face token (`hf_...`) + Cloudinary (cloud name, key, secret). DummyJSON needs nothing.
+- [ ] **Fill in `backend/.env`** — copy `.env.example`, paste the keys above
+- [ ] **Run migrations locally** — `flask db init && flask db migrate -m "initial" && flask db upgrade` (needs Postgres running)
+- [ ] **HF Space reliability** — try-on uses the public IDM-VTON Space (CatVTON was broken). Public Spaces can go down or hit ZeroGPU quota; if it fails, check the Space is up, or switch via `HF_TRYON_SPACE` / `HF_TRYON_API_NAME` (+ predict args in `services/huggingface.py`)
 - [ ] **End-to-end test** — register → search → upload photo → try on → view result
-- [ ] **Friendly error for Fashn.ai rejection** — when AI can't detect a human in the photo, show a clear message instead of generic "FAILED"
-- [ ] **Saved outfits / favorites** (check rubric) — history endpoint exists; add explicit save button if rubric requires it
+- [ ] **Friendly error for model rejection** — when the model can't detect a human, show a clear message instead of generic "FAILED"
+- [ ] **Saved outfits / favorites** (check rubric) — history page is live (`/history`); add an explicit "save/favorite" toggle only if the rubric demands more than viewing past try-ons
 - [ ] **Architecture diagram** — export a clean diagram image for final deliverable
 - [ ] **Elevator pitch** — 30-second pitch for demo day
 - [ ] **Final rubric check** — verify every grading criterion before submission
@@ -278,13 +279,14 @@ npm run dev                 # http://localhost:5173 (proxies /api → :5000)
 ## Try-On Flow (end to end)
 
 ```
-1. User uploads photo       POST /api/uploads/person → stored in S3
+1. User uploads photo       POST /api/uploads/person → stored in Cloudinary
 2. User selects product     navigates to /fitting-room with product data
 3. User clicks "Try It On"  POST /api/tryon/generate → returns job_id immediately
-4. Background thread fires  calls Fashn.ai with both image URLs
-5. Worker polls Fashn.ai    every 5s until DONE or FAILED (max 3 min)
-6. Result downloaded        saved to S3 as results/{user_id}/{uuid}.jpg
-7. Job updated in DB        status=DONE, result_url=S3 key
+4. Background thread fires  dresses → OOTDiffusion (full-body), else → IDM-VTON;
+                            dresses fall back to IDM-VTON if OOTDiffusion is down
+5. Worker waits on model    gradio_client blocks until the result is ready
+6. Result stored            uploaded to Cloudinary as results/{user_id}/{uuid}
+7. Job updated in DB        status=DONE, result_url=Cloudinary public_id
 8. Frontend polls            GET /api/tryon/jobs/{job_id} every 3s
-9. Result displayed         presigned S3 URL rendered in TryOnStatus
+9. Result displayed         Cloudinary URL rendered in TryOnStatus
 ```
