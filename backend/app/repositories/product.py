@@ -12,12 +12,12 @@ class ProductRepository(BaseRepository[Product]):
         super().__init__(session)
 
     def get_by_external_id(self, external_id: int) -> Optional[Product]:
-        return self.session.query(Product).filter(Product.external_id == external_id).first()
+        return self.session.query(Product).filter(Product.external_id == str(external_id)).first()
 
     def get_or_create(self, external_id: int, **kwargs) -> Product:
         product = self.get_by_external_id(external_id)
         if not product:
-            product = Product(external_id=external_id, **kwargs)
+            product = Product(external_id=str(external_id), **kwargs)
             self.save(product)
         return product
 
