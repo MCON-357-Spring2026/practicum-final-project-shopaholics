@@ -6,6 +6,7 @@ from flask_jwt_extended import jwt_required
 from app.extensions import db
 from app.models.product import Product
 from app.services import catalog
+from app.repositories import ProductRepository
 
 products_bp = Blueprint("products", __name__)
 
@@ -19,24 +20,24 @@ def _is_cache_fresh(product: Product) -> bool:
 def _upsert_product(raw: dict) -> Product:
     """Persist or refresh a product from a raw DummyJSON dict."""
     external_id = str(raw.get("id"))
-
-    product = Product.query.filter_by(external_id=external_id).first()
-
-    if not product:
-        product = Product(external_id=external_id)
-        db.session.add(product)
-
+    product_repo = ProductRepository()
+    
     images = raw.get("images") or []
-    product.title = raw.get("title")
-    # DummyJSON omits "brand" on some items — fall back to the category.
-    product.brand = raw.get("brand") or raw.get("category")
-    product.image_url = raw.get("thumbnail") or (images[0] if images else None)
-    product.category = raw.get("category")
-    product.price = raw.get("price")
-    product.raw_data = raw
-    product.cached_at = datetime.now(timezone.utc)
-
-    db.session.commit()
+    product_data = {
+        "title": raw.get("title"),
+        "brand": raw.get("brand") or raw.get("category"),
+        "image_url": raw.get("thumbnail") or (images[0] if images else None),
+        "category": raw.get("category"),
+        "price": raw.get("price"),
+        "raw_data": raw
+    }
+    
+    product = product_repo.get_by_external_id(int(external_id))
+    if product:
+        product = product_repo.update_from_external(product, **product_data)
+    else:
+        product = product_repo.get_or_create(int(external_id), **product_data)
+    
     return product
 
 
@@ -80,7 +81,8 @@ def search():
 @products_bp.get("/<string:product_id>")
 @jwt_required()
 def get_product(product_id: str):
-    product = db.session.get(Product, product_id)
+    product_repo = ProductRepository()
+    product = product_repo.get_by_id(product_id)
 
     if not product:
         return jsonify({"error": "Product not found"}), 404

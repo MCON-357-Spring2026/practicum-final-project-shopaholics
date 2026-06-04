@@ -6,6 +6,7 @@ from app.models.tryon_job import TryOnJob, JobStatus
 from app.models.product import Product
 from app.services import storage
 from app.tasks import tryon_worker
+from app.repositories import TryOnJobRepository
 
 tryon_bp = Blueprint("tryon", __name__)
 
@@ -24,15 +25,13 @@ def generate():
     if not person_image_url or not garment_image_url:
         return jsonify({"error": "person_image_url and garment_image_url are required"}), 400
 
-    job = TryOnJob(
+    job_repo = TryOnJobRepository()
+    job = job_repo.create_job(
         user_id=user_id,
         product_id=product_id,
-        person_image_url=person_image_url,
-        garment_image_url=garment_image_url,
-        status=JobStatus.PENDING,
+        user_image_url=person_image_url,
+        garment_image_url=garment_image_url
     )
-    db.session.add(job)
-    db.session.commit()
 
     tryon_worker.dispatch(current_app._get_current_object(), job.id)
 
@@ -45,9 +44,10 @@ def generate():
 def get_job(job_id: str):
     user_id = get_jwt_identity()
 
-    job = db.session.get(TryOnJob, job_id)
+    job_repo = TryOnJobRepository()
+    job = job_repo.get_user_job_by_id(user_id, job_id)
 
-    if not job or job.user_id != user_id:
+    if not job:
         return jsonify({"error": "Job not found"}), 404
 
     payload = job.to_dict()
@@ -66,25 +66,25 @@ def history():
     page = int(request.args.get("page", 1))
     per_page = min(int(request.args.get("per_page", 10)), 50)
 
-    pagination = (
-        TryOnJob.query
-        .filter_by(user_id=user_id)
-        .order_by(TryOnJob.created_at.desc())
-        .paginate(page=page, per_page=per_page, error_out=False)
-    )
-
+    job_repo = TryOnJobRepository()
+    offset = (page - 1) * per_page
+    jobs_list = job_repo.get_user_jobs(user_id, limit=per_page, offset=offset)
+    total = job_repo.count_user_jobs(user_id)
+    
     jobs = []
-    for job in pagination.items:
+    for job in jobs_list:
         payload = job.to_dict()
         if job.status == JobStatus.DONE and job.result_url:
             payload["result_url"] = storage.get_url(job.result_url)
         jobs.append(payload)
 
+    pages = (total + per_page - 1) // per_page  # Calculate total pages
+    
     return jsonify({
         "jobs": jobs,
-        "total": pagination.total,
+        "total": total,
         "page": page,
-        "pages": pagination.pages,
+        "pages": pages,
     }), 200
 
 
@@ -94,15 +94,15 @@ def history():
 def delete_job(job_id: str):
     user_id = get_jwt_identity()
 
-    job = db.session.get(TryOnJob, job_id)
+    job_repo = TryOnJobRepository()
+    job = job_repo.get_user_job_by_id(user_id, job_id)
 
-    if not job or job.user_id != user_id:
+    if not job:
         return jsonify({"error": "Job not found"}), 404
 
     if job.result_url:
         storage.delete_file(job.result_url)
 
-    db.session.delete(job)
-    db.session.commit()
+    job_repo.delete(job)
 
     return jsonify({"message": "Job deleted"}), 200

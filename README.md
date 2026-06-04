@@ -1,9 +1,20 @@
-# FitVision — AI Virtual Try-On App
+# FitVision — AI Virtual Try-On Shopping Platform
 
-A full-stack web app where users upload a photo of themselves, pick a clothing item from a live catalog, and see an AI-generated image of themselves wearing it.
+A full-stack web application that allows users to virtually try on clothes using AI-powered technology. Users can upload their photos and see how different garments would look on them before making a purchase.
 
-**Jira:** https://mcon152.atlassian.net/browse/M3S-17
-**Docs:** https://mcon152.atlassian.net/wiki/spaces/team9d39f66a69dc4fdaa5b025a0c78b48b6/overview
+## 🚀 Live Demo
+
+- **Frontend**: [https://fitvision-frontend.onrender.com](https://fitvision-frontend.onrender.com)
+- **Backend API**: [https://fitvision-backend.onrender.com](https://fitvision-backend.onrender.com)
+
+## ✨ Key Features
+
+- **AI-Powered Virtual Try-On**: Upload your photo and see yourself wearing different clothes
+- **Smart Model Selection**: Automatically uses OOTDiffusion for dresses (full-body) and IDM-VTON for tops
+- **Product Search**: Browse and search through a curated catalog of wearable items
+- **Try-On History**: View and manage all your previous virtual try-on sessions
+- **Secure Authentication**: JWT-based authentication with protected routes
+- **Responsive Design**: Works seamlessly across desktop and mobile devices
 
 ---
 

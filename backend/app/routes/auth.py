@@ -7,6 +7,7 @@ from flask_jwt_extended import (
 
 from app.extensions import db, bcrypt
 from app.models.user import User
+from app.repositories import UserRepository
 
 auth_bp = Blueprint("auth", __name__)
 
@@ -22,14 +23,12 @@ def register():
     if not email or not password:
         return jsonify({"error": "Missing email or password"}), 400
 
-    if User.query.filter_by(email=email).first():
+    user_repo = UserRepository()
+    if user_repo.email_exists(email):
         return jsonify({"error": "User already exists"}), 409
 
     hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
-
-    user = User(email=email, password_hash=hashed_pw)
-    db.session.add(user)
-    db.session.commit()
+    user = user_repo.create_user(email=email, password_hash=hashed_pw)
 
     return jsonify({"message": "User created successfully"}), 201
 
@@ -42,7 +41,8 @@ def login():
     email = data.get("email")
     password = data.get("password")
 
-    user = User.query.filter_by(email=email).first()
+    user_repo = UserRepository()
+    user = user_repo.get_by_email(email)
 
     if not user or not bcrypt.check_password_hash(user.password_hash, password):
         return jsonify({"error": "Invalid credentials"}), 401
@@ -64,7 +64,8 @@ def login():
 def me():
     user_id = get_jwt_identity()
 
-    user = db.session.get(User, user_id)
+    user_repo = UserRepository()
+    user = user_repo.get_by_id(user_id)
 
     if not user:
         return jsonify({"error": "User not found"}), 404

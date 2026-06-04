@@ -13,22 +13,24 @@ def run_tryon_job(app, job_id: str) -> None:
         from app.models.tryon_job import TryOnJob, JobStatus
         from app.models.product import Product
         from app.services import huggingface, storage
+        from app.repositories import TryOnJobRepository, ProductRepository
 
-        job = db.session.get(TryOnJob, job_id)
+        job_repo = TryOnJobRepository()
+        job = job_repo.get_by_id(job_id)
         if not job:
             logger.error(f"TryOnJob {job_id} not found")
             return
 
         try:
             # ── Step 1: mark processing ──────────────────
-            job.status = JobStatus.PROCESSING
-            db.session.commit()
+            job_repo.mark_as_processing(job)
 
             # A short garment description helps IDM-VTON; use the product title.
             description = "an item of clothing"
             category = ""
             if job.product_id:
-                product = db.session.get(Product, job.product_id)
+                product_repo = ProductRepository()
+                product = product_repo.get_by_id(job.product_id)
                 if product:
                     if product.title:
                         description = product.title
@@ -61,20 +63,14 @@ def run_tryon_job(app, job_id: str) -> None:
             uploaded = storage.upload_image(result_path, public_id)
 
             # ── Step 4: mark done ─────────────────────────
-            job.result_url = uploaded["public_id"]
-            job.status = JobStatus.DONE
-            job.completed_at = datetime.now(timezone.utc)
-            db.session.commit()
+            job_repo.mark_as_completed(job, uploaded["public_id"])
 
             logger.info(f"TryOnJob {job_id} completed → {uploaded['public_id']}")
 
         except Exception as e:
             logger.error(f"TryOnJob {job_id} failed: {e}")
             try:
-                job.status = JobStatus.FAILED
-                job.error_message = str(e)
-                job.completed_at = datetime.now(timezone.utc)
-                db.session.commit()
+                job_repo.mark_as_failed(job, str(e))
             except Exception:
                 db.session.rollback()
 
