@@ -1,303 +1,307 @@
-# FitVision — AI Virtual Try-On Shopping Platform
+# FitVision - AI Virtual Try-On Shopping Platform
 
-A full-stack web application that allows users to virtually try on clothes using AI-powered technology. Users can upload their photos and see how different garments would look on them before making a purchase.
+FitVision is a modern e-commerce platform that allows users to virtually try on clothes using AI-powered technology. Users can upload their photos and see how different garments would look on them before making a purchase.
 
 ## 🚀 Live Demo
 
-- **Frontend**: [https://fitvision-frontend.onrender.com](https://fitvision-frontend.onrender.com)
-- **Backend API**: [https://fitvision-backend.onrender.com](https://fitvision-backend.onrender.com)
+- **Frontend**: [https://fitvision-frontend-bqwc.onrender.com](https://fitvision-frontend-bqwc.onrender.com)
+- **Backend API**: [https://practicum-final-project-shopaholics.onrender.com](https://practicum-final-project-shopaholics.onrender.com)
 
-## ✨ Key Features
+## ✨ Features
 
-- **AI-Powered Virtual Try-On**: Upload your photo and see yourself wearing different clothes
+- **Virtual Try-On**: Upload your photo and try on clothes virtually using AI models
 - **Smart Model Selection**: Automatically uses OOTDiffusion for dresses (full-body) and IDM-VTON for tops
-- **Product Search**: Browse and search through a curated catalog of wearable items
-- **Try-On History**: View and manage all your previous virtual try-on sessions
-- **Secure Authentication**: JWT-based authentication with protected routes
-- **Responsive Design**: Works seamlessly across desktop and mobile devices
+- **Product Catalog**: Browse and search through a curated collection of wearable items
+- **User Authentication**: Secure registration and login with JWT tokens
+- **Try-On History**: View and manage your previous virtual try-on sessions
+- **Responsive Design**: Works seamlessly on desktop and mobile devices
 
----
+## 🛠️ Technology Stack
 
-## Tech Stack
+### Backend
+- **Framework**: Flask (Python)
+- **Database**: PostgreSQL with SQLAlchemy ORM
+- **Authentication**: JWT (Flask-JWT-Extended)
+- **Image Storage**: Cloudinary
+- **AI Models**: HuggingFace (IDM-VTON, OOTDiffusion)
+- **Background Tasks**: Thread-based workers
+- **Testing**: Pytest with comprehensive coverage
+- **Architecture**: Repository pattern for data access
 
-| Layer | Technology |
-|---|---|
-| Frontend | React 18, Vite, React Router, Axios |
-| Backend | Flask, SQLAlchemy, Flask-JWT-Extended, Flask-Bcrypt, Flask-Migrate |
-| Database | PostgreSQL (local in dev, Render managed in prod) |
-| File Storage | Cloudinary (user photos + AI results) |
-| Product Catalog | DummyJSON (free, no-signup fake-store API) |
-| AI Try-On Engine | Hugging Face Spaces — IDM-VTON (tops) + OOTDiffusion (dresses), `gradio_client` |
-| Deployment | Render (backend + frontend + DB via render.yaml) |
+### Frontend
+- **Framework**: React 18 with Vite
+- **Styling**: Tailwind CSS
+- **State Management**: React Context API
+- **API Client**: Axios with JWT interceptor
+- **Routing**: React Router v6
 
----
+### Infrastructure
+- **Hosting**: Render.com
+- **Database**: PostgreSQL (Render managed)
+- **CI/CD**: Automated deployment via render.yaml
 
-## Project Structure
+## 📋 Prerequisites
+
+- Python 3.9+
+- Node.js 16+
+- PostgreSQL 13+
+- Cloudinary account
+- HuggingFace API token
+
+## 🔧 Installation
+
+### Backend Setup
+
+1. Clone the repository:
+```bash
+git clone https://github.com/MCON-357-Spring2026/practicum-final-project-shopaholics.git
+cd practicum-final-project-shopaholics/backend
+```
+
+2. Create a virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+```
+
+3. Install dependencies:
+```bash
+pip install -r requirements.txt
+pip install -r requirements-test.txt  # For running tests
+```
+
+4. Set up environment variables:
+```bash
+cp .env.example .env
+# Edit .env with your configuration
+```
+
+5. Run database migrations:
+```bash
+flask db init
+flask db migrate -m "initial schema"
+flask db upgrade
+```
+
+6. Start the backend server:
+```bash
+python wsgi.py
+# or
+flask run
+```
+
+The backend will be available at `http://localhost:5000`
+
+### Frontend Setup
+
+1. Navigate to frontend directory:
+```bash
+cd ../frontend
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
+3. Start the development server:
+```bash
+npm run dev
+```
+
+The frontend will be available at `http://localhost:5173`
+
+## 🧪 Testing
+
+### Running Backend Tests
+
+```bash
+cd backend
+
+# Run all tests with coverage
+./run_tests.sh
+
+# Run only unit tests
+./run_tests.sh unit
+
+# Run only integration tests
+./run_tests.sh integration
+
+# Run tests with pytest directly
+pytest tests/ -v
+```
+
+### Test Coverage
+
+The project includes comprehensive test coverage for:
+- **Models**: User, Product, TryOnJob
+- **Repositories**: Data access layer testing
+- **Services**: Business logic testing
+- **Routes**: API endpoint testing
+
+## 📁 Project Structure
 
 ```
 practicum-final-project-shopaholics/
-├── render.yaml                        ← Render deployment config (all 3 services)
-├── README.md
-│
 ├── backend/
-│   ├── wsgi.py                        ← Entry point (reads PORT from env)
-│   ├── config.py                      ← Dev / Prod / Testing configs
-│   ├── requirements.txt
-│   ├── .env.example                   ← Copy to .env and fill in keys
-│   └── app/
-│       ├── __init__.py                ← create_app() factory
-│       ├── extensions.py              ← db, migrate, jwt, bcrypt, cors, limiter
-│       ├── models/
-│       │   ├── __init__.py            ← imports all models (required for Alembic)
-│       │   ├── user.py                ← User (id, email, password_hash, created_at)
-│       │   ├── product.py             ← Product (cached from DummyJSON)
-│       │   └── tryon_job.py           ← TryOnJob (PENDING→PROCESSING→DONE|FAILED)
-│       ├── routes/
-│       │   ├── auth.py                ← POST /register, POST /login, GET /me, POST /logout
-│       │   ├── products.py            ← GET /search, GET /<id> (DB cache + DummyJSON)
-│       │   ├── uploads.py             ← POST /person, DELETE /<key>
-│       │   └── tryon.py               ← POST /generate, GET /jobs/<id>, GET /history
-│       ├── services/
-│       │   ├── storage.py             ← Cloudinary: upload_image, get_url, delete_file
-│       │   ├── catalog.py             ← DummyJSON: search_products, get_product
-│       │   └── huggingface.py         ← IDM-VTON Space via gradio_client: run_tryon
-│       └── tasks/
-│           └── tryon_worker.py        ← background thread: Hugging Face → Cloudinary → DB update
+│   ├── app/
+│   │   ├── models/          # SQLAlchemy models
+│   │   ├── repositories/    # Data access layer (Repository pattern)
+│   │   ├── routes/          # API endpoints (Controllers)
+│   │   ├── services/        # Business logic layer
+│   │   ├── tasks/           # Background job processing
+│   │   └── extensions.py    # Flask extensions initialization
+│   ├── migrations/          # Alembic database migrations
+│   ├── tests/              # Comprehensive test suite
+│   │   ├── models/         # Model tests
+│   │   ├── repositories/   # Repository tests
+│   │   ├── services/       # Service tests
+│   │   └── routes/         # API route tests
+│   ├── config.py           # Application configuration
+│   ├── requirements.txt    # Production dependencies
+│   ├── requirements-test.txt # Testing dependencies
+│   └── wsgi.py            # Application entry point
 │
-└── frontend/
-    ├── index.html
-    ├── vite.config.js                 ← dev proxy /api → localhost:5000
-    ├── package.json
-    └── src/
-        ├── main.jsx                   ← BrowserRouter + AuthProvider
-        ├── App.jsx                    ← route definitions
-        ├── api/
-        │   ├── client.js              ← axios + JWT interceptor + 401 redirect
-        │   ├── auth.js
-        │   ├── products.js
-        │   ├── uploads.js
-        │   └── tryon.js
-        ├── context/
-        │   └── AuthContext.jsx        ← user state, login/logout, token restore
-        ├── components/
-        │   ├── ProtectedRoute.jsx
-        │   ├── ImageUpload.jsx        ← drag+drop, file validation, Cloudinary upload
-        │   ├── ProductCard.jsx        ← product tile with "Try On" button
-        │   └── TryOnStatus.jsx        ← polls every 3s, shows result image
-        └── pages/
-            ├── Login.jsx              ← login + register in one form
-            ├── Catalog.jsx            ← search bar + product grid
-            ├── FittingRoom.jsx        ← photo upload + garment + try-on trigger
-            └── History.jsx            ← past try-ons grid (view + delete)
+├── frontend/
+│   ├── src/
+│   │   ├── api/            # API client modules
+│   │   ├── components/     # Reusable React components
+│   │   ├── context/        # React Context for state management
+│   │   ├── pages/          # Page components
+│   │   └── App.jsx         # Main application component
+│   ├── package.json        # Node.js dependencies
+│   └── vite.config.js      # Vite configuration
+│
+└── render.yaml             # Render deployment configuration
 ```
 
----
+## 🔌 API Documentation
 
-## API Routes
+### Authentication Endpoints
 
-### Auth — `/api/auth`
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| POST | `/register` | No | Create account |
-| POST | `/login` | No | Returns JWT access token |
-| GET | `/me` | Yes | Current user profile |
-| POST | `/logout` | No | Client deletes token |
+- `POST /api/auth/register` - Register new user
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "secure_password"
+  }
+  ```
 
-### Products — `/api/products`
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| GET | `/search?q=&category=&limit=` | Yes | Search DummyJSON, cache in DB |
-| GET | `/<id>` | Yes | Single product (refreshes stale cache) |
+- `POST /api/auth/login` - Login user
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "secure_password"
+  }
+  ```
 
-### Uploads — `/api/uploads`
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| POST | `/person` | Yes | Upload user photo → Cloudinary |
-| DELETE | `/<key>` | Yes | Delete own uploaded image |
+- `GET /api/auth/me` - Get current user (requires authentication)
 
-### Try-On — `/api/tryon`
-| Method | Route | Auth | Description |
-|---|---|---|---|
-| POST | `/generate` | Yes | Create job, kick off async worker |
-| GET | `/jobs/<job_id>` | Yes | Poll status + Cloudinary result URL |
-| GET | `/history` | Yes | Paginated past try-ons |
-| DELETE | `/jobs/<job_id>` | Yes | Delete job + Cloudinary result |
+### Product Endpoints
 
-### Health
-| Method | Route | Description |
-|---|---|---|
-| GET | `/health` | Liveness check for Render |
+- `GET /api/products/featured` - Get featured products
+- `GET /api/products/search?q={query}&category={category}&limit={limit}` - Search products
+- `GET /api/products/{id}` - Get single product details
 
----
+### Virtual Try-On Endpoints
 
-## Database Schema
+- `POST /api/tryon/generate` - Create new try-on job
+  ```json
+  {
+    "person_image_url": "https://...",
+    "garment_image_url": "https://...",
+    "product_id": "product_uuid"
+  }
+  ```
 
-```sql
-users
-  id            VARCHAR(36) PRIMARY KEY
-  email         VARCHAR(255) UNIQUE NOT NULL
-  password_hash VARCHAR(255) NOT NULL
-  created_at    TIMESTAMPTZ NOT NULL
+- `GET /api/tryon/jobs/{id}` - Get job status and result
+- `GET /api/tryon/history?page={page}&per_page={per_page}` - Get user's try-on history
+- `DELETE /api/tryon/jobs/{id}` - Delete try-on job and results
 
-products
-  id            VARCHAR(36) PRIMARY KEY
-  external_id   VARCHAR(255) UNIQUE NOT NULL   -- DummyJSON product ID
-  title         VARCHAR(500)
-  brand         VARCHAR(255)
-  image_url     TEXT
-  category      VARCHAR(100)
-  price         NUMERIC(10,2)
-  raw_data      JSON                           -- full API response
-  cached_at     TIMESTAMPTZ NOT NULL
+### Upload Endpoints
 
-tryon_jobs
-  id                  VARCHAR(36) PRIMARY KEY
-  user_id             VARCHAR(36) FK → users.id  (CASCADE DELETE)
-  product_id          VARCHAR(36) FK → products.id (SET NULL)
-  person_image_url    TEXT NOT NULL
-  garment_image_url   TEXT NOT NULL
-  status              ENUM(PENDING, PROCESSING, DONE, FAILED)
-  result_url          TEXT
-  error_message       TEXT
-  created_at          TIMESTAMPTZ NOT NULL
-  completed_at        TIMESTAMPTZ
-```
+- `POST /api/uploads/image` - Upload user image
+  - Accepts: JPG, JPEG, PNG, GIF, WEBP
+  - Max size: 10MB
 
----
+## 🚀 Deployment
 
-## Environment Variables
+The application is configured for deployment on Render.com using the `render.yaml` file.
 
-Copy `backend/.env.example` to `backend/.env` and fill in:
+### Deploy to Render
 
-```bash
-FLASK_APP=wsgi.py
-FLASK_ENV=development
-SECRET_KEY=                    # any random string
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/fitvision_dev
-JWT_SECRET_KEY=                # any random string
-FRONTEND_URL=http://localhost:5173
+1. Push your code to GitHub
+2. Create a new account on [Render.com](https://render.com)
+3. Create a new Blueprint instance
+4. Connect your GitHub repository
+5. Render will automatically create:
+   - Backend web service
+   - Frontend static site
+   - PostgreSQL database
 
-# Cloudinary (image storage)
-CLOUDINARY_CLOUD_NAME=
-CLOUDINARY_API_KEY=
-CLOUDINARY_API_SECRET=
+### Environment Variables
 
-# Hugging Face (AI try-on)
-HUGGINGFACE_API_TOKEN=         # starts with hf_
-# HF_TRYON_SPACE=yisol/IDM-VTON          # optional override
-# HF_TRYON_API_NAME=/tryon               # optional override
+Configure these in your Render dashboard:
 
-# Product catalog API (no key needed)
-PRODUCT_API_BASE_URL=https://dummyjson.com
-```
+**Backend Service**:
+- `SECRET_KEY` - Flask secret key
+- `JWT_SECRET_KEY` - JWT signing key
+- `DATABASE_URL` - Provided by Render
+- `CLOUDINARY_URL` - Your Cloudinary URL
+- `HUGGINGFACE_API_TOKEN` - Your HuggingFace API token
+- `FRONTEND_URL` - Your frontend URL (for CORS)
 
----
+**Frontend Service**:
+- `VITE_API_URL` - Your backend API URL
 
-## Local Setup
+## 🏗️ Architecture
 
-### Backend
-```bash
-cd backend
-pip install -r requirements.txt
-cp .env.example .env        # fill in values
+### Backend Architecture
 
-flask db init               # first time only
-flask db migrate -m "initial schema"
-flask db upgrade
+The backend follows a layered architecture pattern:
 
-flask run                   # http://localhost:5000
-```
+1. **Routes (Controllers)** - Handle HTTP requests and responses
+2. **Services** - Contains business logic
+3. **Repositories** - Data access layer with database operations
+4. **Models** - SQLAlchemy ORM models
 
-### Frontend
-```bash
-cd frontend
-npm install
-npm run dev                 # http://localhost:5173 (proxies /api → :5000)
-```
+### Key Design Patterns
 
----
+- **Repository Pattern**: Abstracts data access logic
+- **Service Layer**: Separates business logic from controllers
+- **Factory Pattern**: Flask app factory for better testing
+- **Background Workers**: Asynchronous job processing for AI operations
 
-## Deployment (Render)
+### Database Schema
 
-`render.yaml` at repo root defines all three services.
+- **Users**: Authentication and user profiles
+- **Products**: Cached product data from external API
+- **TryOnJobs**: Virtual try-on job tracking with status management
 
-1. Push repo to GitHub
-2. Render → New → Blueprint → connect repo
-3. Set `sync: false` env vars manually in Render dashboard:
+## 🔒 Security Features
 
-**On `fitvision-backend`:**
-- `FRONTEND_URL` → `https://fitvision-frontend.onrender.com`
-- `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET`
-- `HUGGINGFACE_API_TOKEN`
+- Password hashing with bcrypt
+- JWT-based authentication
+- Request rate limiting
+- File type validation for uploads
+- CORS configuration
+- SQL injection protection via ORM
 
-**On `fitvision-frontend`:**
-- `VITE_API_URL` → `https://fitvision-backend.onrender.com/api`
+## 🤝 Contributing
 
-4. Redeploy both services
-5. Verify: `curl https://fitvision-backend.onrender.com/health`
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-### Common Errors
-| Error | Fix |
-|---|---|
-| `KeyError: 'SECRET_KEY'` | Add env var in Render dashboard |
-| CORS blocked in browser | `FRONTEND_URL` must match frontend URL exactly, no trailing slash |
-| Cloudinary upload fails | Check `CLOUDINARY_*` values match the dashboard (reveal the secret) |
-| Frontend API calls fail | `VITE_API_URL` not set or missing `/api` suffix |
-| Try-on stuck on PROCESSING | Free dyno spun down mid-job, or HF Space cold-start (~20s) — resubmit |
-| Try-on always FAILS | HF Space API signature changed — check "Use via API" on the Space page and update `HF_TRYON_SPACE` / `HF_TRYON_API_NAME` |
+## 📄 License
 
----
+This project is licensed under the MIT License.
 
-## What's Done
+## 🙏 Acknowledgments
 
-- [x] Flask app factory with all extensions wired
-- [x] Environment-based config (dev / prod / test)
-- [x] SQLAlchemy models: `User`, `Product`, `TryOnJob`
-- [x] Flask-Migrate setup
-- [x] Auth routes: register, login, JWT, protected `/me`
-- [x] Cloudinary storage service: upload, delete, URL build
-- [x] Upload route with file validation (type + 10MB limit)
-- [x] DummyJSON product service with DB caching + TTL
-- [x] Hugging Face / IDM-VTON try-on service (`gradio_client`)
-- [x] Async try-on worker (background thread)
-- [x] Try-on routes: generate, poll, history, delete
-- [x] React app: Vite + React Router + AuthContext
-- [x] Axios client with JWT interceptor + 401 redirect
-- [x] All API wrappers: auth, products, uploads, tryon
-- [x] Pages: Login, Catalog, FittingRoom, History (view + delete past try-ons)
-- [x] Components: ImageUpload (drag+drop), ProductCard, TryOnStatus (polling)
-- [x] ProtectedRoute
-- [x] `render.yaml` for full Render deployment
-- [x] Deployment guide with step-by-step checklist + common errors
-
----
-
-## What's Left
-
-- [ ] **Get free API keys** — Hugging Face token (`hf_...`) + Cloudinary (cloud name, key, secret). DummyJSON needs nothing.
-- [ ] **Fill in `backend/.env`** — copy `.env.example`, paste the keys above
-- [ ] **Run migrations locally** — `flask db init && flask db migrate -m "initial" && flask db upgrade` (needs Postgres running)
-- [ ] **HF Space reliability** — try-on uses the public IDM-VTON Space (CatVTON was broken). Public Spaces can go down or hit ZeroGPU quota; if it fails, check the Space is up, or switch via `HF_TRYON_SPACE` / `HF_TRYON_API_NAME` (+ predict args in `services/huggingface.py`)
-- [ ] **End-to-end test** — register → search → upload photo → try on → view result
-- [ ] **Friendly error for model rejection** — when the model can't detect a human, show a clear message instead of generic "FAILED"
-- [ ] **Saved outfits / favorites** (check rubric) — history page is live (`/history`); add an explicit "save/favorite" toggle only if the rubric demands more than viewing past try-ons
-- [ ] **Architecture diagram** — export a clean diagram image for final deliverable
-- [ ] **Elevator pitch** — 30-second pitch for demo day
-- [ ] **Final rubric check** — verify every grading criterion before submission
-
----
-
-## Try-On Flow (end to end)
-
-```
-1. User uploads photo       POST /api/uploads/person → stored in Cloudinary
-2. User selects product     navigates to /fitting-room with product data
-3. User clicks "Try It On"  POST /api/tryon/generate → returns job_id immediately
-4. Background thread fires  dresses → OOTDiffusion (full-body), else → IDM-VTON;
-                            dresses fall back to IDM-VTON if OOTDiffusion is down
-5. Worker waits on model    gradio_client blocks until the result is ready
-6. Result stored            uploaded to Cloudinary as results/{user_id}/{uuid}
-7. Job updated in DB        status=DONE, result_url=Cloudinary public_id
-8. Frontend polls            GET /api/tryon/jobs/{job_id} every 3s
-9. Result displayed         Cloudinary URL rendered in TryOnStatus
-```
+- HuggingFace for AI models (IDM-VTON, OOTDiffusion)
+- DummyJSON for product catalog API
+- Cloudinary for image storage and management
+- Render.com for hosting infrastructure
