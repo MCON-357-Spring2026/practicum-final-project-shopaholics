@@ -1,6 +1,7 @@
 from typing import TypeVar, Generic, List, Optional, Dict, Any
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import SQLAlchemyError
+from flask import current_app
 from app.extensions import db
 
 T = TypeVar('T')
@@ -9,7 +10,11 @@ class BaseRepository(Generic[T]):
     model: type[T] = None
 
     def __init__(self, session: Session = None):
-        self.session = session or db.session
+        if session:
+            self.session = session
+        else:
+            # Use current app context's db session
+            self.session = db.session
 
     def create(self, **kwargs) -> T:
         instance = self.model(**kwargs)

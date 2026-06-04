@@ -15,22 +15,28 @@ auth_bp = Blueprint("auth", __name__)
 # ── Register ────────────────────────────────────────────
 @auth_bp.post("/register")
 def register():
-    data = request.get_json() or {}
+    try:
+        data = request.get_json() or {}
 
-    email = data.get("email")
-    password = data.get("password")
+        email = data.get("email")
+        password = data.get("password")
 
-    if not email or not password:
-        return jsonify({"error": "Missing email or password"}), 400
+        if not email or not password:
+            return jsonify({"error": "Missing email or password"}), 400
 
-    user_repo = UserRepository()
-    if user_repo.email_exists(email):
-        return jsonify({"error": "User already exists"}), 409
+        user_repo = UserRepository()
+        if user_repo.email_exists(email):
+            return jsonify({"error": "User already exists"}), 409
 
-    hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
-    user = user_repo.create_user(email=email, password_hash=hashed_pw)
+        hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
+        user = user_repo.create_user(email=email, password_hash=hashed_pw)
 
-    return jsonify({"message": "User created successfully"}), 201
+        return jsonify({"message": "User created successfully"}), 201
+    except Exception as e:
+        # Log the error for debugging
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Registration failed: {str(e)}"}), 500
 
 
 # ── Login ───────────────────────────────────────────────
