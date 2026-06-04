@@ -1,0 +1,89 @@
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import (
+    create_access_token,
+    jwt_required,
+    get_jwt_identity
+)
+
+from app.extensions import db, bcrypt
+from app.models.user import User
+from app.repositories import UserRepository
+
+auth_bp = Blueprint("auth", __name__)
+
+
+# ── Register ────────────────────────────────────────────
+@auth_bp.post("/register")
+def register():
+    try:
+        data = request.get_json() or {}
+
+        email = data.get("email")
+        password = data.get("password")
+
+        if not email or not password:
+            return jsonify({"error": "Missing email or password"}), 400
+
+        user_repo = UserRepository()
+        if user_repo.email_exists(email):
+            return jsonify({"error": "User already exists"}), 409
+
+        hashed_pw = bcrypt.generate_password_hash(password).decode("utf-8")
+        user = user_repo.create_user(email=email, password_hash=hashed_pw)
+
+        return jsonify({"message": "User created successfully"}), 201
+    except Exception as e:
+        # Log the error for debugging
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Registration failed: {str(e)}"}), 500
+
+
+# ── Login ───────────────────────────────────────────────
+@auth_bp.post("/login")
+def login():
+    data = request.get_json() or {}
+
+    email = data.get("email")
+    password = data.get("password")
+
+    user_repo = UserRepository()
+    user = user_repo.get_by_email(email)
+
+    if not user or not bcrypt.check_password_hash(user.password_hash, password):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    access_token = create_access_token(identity=str(user.id))
+
+    return jsonify({
+        "access_token": access_token,
+        "user": {
+            "id": str(user.id),
+            "email": user.email
+        }
+    }), 200
+
+
+# ── Me (Protected) ──────────────────────────────────────
+@auth_bp.get("/me")
+@jwt_required()
+def me():
+    user_id = get_jwt_identity()
+
+    user_repo = UserRepository()
+    user = user_repo.get_by_id(user_id)
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    return jsonify({
+        "id": str(user.id),
+        "email": user.email
+    })
+
+
+# ── Logout (stateless for now) ──────────────────────────
+@auth_bp.post("/logout")
+def logout():
+    # JWT is stateless — frontend deletes token
+    return jsonify({"message": "Logged out"}), 200

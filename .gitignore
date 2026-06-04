@@ -22,3 +22,20 @@
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
 replay_pid*
+.env
+
+# ── Python (Flask backend) ──────────────────────────────
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+instance/
+
+# ── Node / Vite (React frontend) ────────────────────────
+node_modules/
+dist/
+.vite/
+npm-debug.log*
