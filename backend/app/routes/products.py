@@ -19,8 +19,15 @@ def _is_cache_fresh(product: Product) -> bool:
 
 def _upsert_product(raw: dict) -> Product:
     """Persist or refresh a product from a raw DummyJSON dict."""
-    external_id = str(raw.get("id"))
+    external_id = raw.get("id")
     product_repo = ProductRepository()
+    
+    # Handle both numeric and string IDs (seed data uses strings like "seed-04469")
+    if isinstance(external_id, str) and external_id.startswith("seed-"):
+        # For seed products, use a hash of the ID to create a numeric external_id
+        external_id_int = hash(external_id) % (10**8)  # Keep it reasonable size
+    else:
+        external_id_int = int(external_id) if external_id else 0
     
     images = raw.get("images") or []
     product_data = {
@@ -32,11 +39,11 @@ def _upsert_product(raw: dict) -> Product:
         "raw_data": raw
     }
     
-    product = product_repo.get_by_external_id(int(external_id))
+    product = product_repo.get_by_external_id(external_id_int)
     if product:
         product = product_repo.update_from_external(product, **product_data)
     else:
-        product = product_repo.get_or_create(int(external_id), **product_data)
+        product = product_repo.get_or_create(external_id_int, **product_data)
     
     return product
 
@@ -48,12 +55,21 @@ def featured():
     """Return all wearable garments so the catalog has items without searching."""
     try:
         raw_results = catalog.list_wearables()
+        current_app.logger.info(f"Got {len(raw_results)} products from catalog")
     except Exception as e:
         current_app.logger.error(f"Catalog API error: {e}")
+        import traceback
+        traceback.print_exc()
         return jsonify({"error": "Failed to fetch products"}), 502
 
-    products = [_upsert_product(r) for r in raw_results]
-    return jsonify([p.to_dict() for p in products]), 200
+    try:
+        products = [_upsert_product(r) for r in raw_results]
+        return jsonify([p.to_dict() for p in products]), 200
+    except Exception as e:
+        current_app.logger.error(f"Error processing products: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Failed to process products: {str(e)}"}), 500
 
 
 # ── Search ───────────────────────────────────────────────

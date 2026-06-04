@@ -19,7 +19,8 @@ import requests
 from flask import current_app
 
 # DummyJSON categories that are actual wearable garments (what try-on supports).
-WEARABLE_CATEGORIES = ["mens-shirts", "tops", "womens-dresses"]
+# Updated to match actual DummyJSON categories
+WEARABLE_CATEGORIES = ["mens-shirts", "mens-shoes", "mens-watches", "womens-dresses", "womens-shoes", "womens-watches", "womens-bags", "tops"]
 
 # Local seed catalog of extra garments (free, reliable images from the
 # IDM-VTON Space's example set — known to work well with the try-on model).
@@ -46,14 +47,35 @@ def list_wearables() -> list[dict]:
     is never empty even if the external API is unreachable.
     """
     items: list[dict] = list(load_seed())
-    for slug in WEARABLE_CATEGORIES:
-        try:
-            response = requests.get(f"{_base()}/products/category/{slug}", timeout=10)
-            response.raise_for_status()
-            items.extend(response.json().get("products", []))
-        except requests.RequestException:
-            continue  # skip a failing category rather than break the whole page
-    return items
+    
+    # If we have seed data, return it first
+    if items:
+        return items[:20]  # Limit to reasonable number
+    
+    # Otherwise try to get from DummyJSON
+    # Note: DummyJSON doesn't have clothing-specific categories, 
+    # so we'll search for clothing-related terms
+    try:
+        response = requests.get(
+            f"{_base()}/products/search",
+            params={"q": "shirt dress jacket coat sweater", "limit": 30},
+            timeout=10
+        )
+        response.raise_for_status()
+        products = response.json().get("products", [])
+        
+        # Filter for items that might be clothing based on title/category
+        clothing_keywords = ["shirt", "dress", "jacket", "coat", "sweater", "top", "blouse", "pants", "jeans"]
+        filtered = [
+            p for p in products 
+            if any(keyword in p.get("title", "").lower() for keyword in clothing_keywords)
+        ]
+        
+        return filtered if filtered else products[:10]  # Return something rather than nothing
+    except requests.RequestException as e:
+        # If API fails, return empty list (seed data already tried above)
+        current_app.logger.error(f"DummyJSON API error: {e}")
+        return []
 
 
 def search_products(query: str, category: str = None, limit: int = 20) -> list[dict]:
