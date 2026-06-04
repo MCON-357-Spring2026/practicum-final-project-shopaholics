@@ -4,8 +4,8 @@ FitVision is a modern e-commerce platform that allows users to virtually try on 
 
 ## 🚀 Live Demo
 
-- **Frontend**: [https://fitvision-frontend.onrender.com](https://fitvision-frontend.onrender.com)
-- **Backend API**: [https://fitvision-backend.onrender.com](https://fitvision-backend.onrender.com)
+- **Frontend**: [https://fitvision-frontend-bqwc.onrender.com](https://fitvision-frontend-bqwc.onrender.com)
+- **Backend API**: [https://practicum-final-project-shopaholics.onrender.com](https://practicum-final-project-shopaholics.onrender.com)
 
 ## ✨ Features
 
@@ -54,7 +54,7 @@ FitVision is a modern e-commerce platform that allows users to virtually try on 
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/practicum-final-project-shopaholics.git
+git clone https://github.com/MCON-357-Spring2026/practicum-final-project-shopaholics.git
 cd practicum-final-project-shopaholics/backend
 ```
 
