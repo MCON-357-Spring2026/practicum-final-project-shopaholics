@@ -14,9 +14,39 @@ for _stream in (sys.stdout, sys.stderr):
 
 load_dotenv()
 
-from app import create_app
-
-app = create_app()
+try:
+    from app import create_app
+    app = create_app()
+    
+    # Add debug route
+    @app.route("/debug-info")
+    def debug_info():
+        import flask
+        return {
+            "status": "running",
+            "python_version": sys.version,
+            "flask_version": flask.__version__,
+            "env": os.environ.get("FLASK_ENV", "not set")
+        }, 200
+        
+except Exception as e:
+    # Emergency fallback app
+    from flask import Flask, jsonify
+    import traceback
+    
+    app = Flask(__name__)
+    error_details = traceback.format_exc()
+    
+    @app.route("/")
+    @app.route("/health")
+    @app.route("/debug-info")
+    def error_info():
+        return jsonify({
+            "error": "Application failed to initialize",
+            "message": str(e),
+            "type": type(e).__name__,
+            "traceback": error_details.split('\n')
+        }), 500
 
 if __name__ == "__main__":
     app.run(

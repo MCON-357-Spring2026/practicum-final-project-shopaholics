@@ -7,7 +7,7 @@ from app.extensions import db
 T = TypeVar('T')
 
 class BaseRepository(Generic[T]):
-    model: type[T] = None
+    model = None  # Remove type hint that might cause issues in older Python
 
     def __init__(self, session: Session = None):
         if session:
